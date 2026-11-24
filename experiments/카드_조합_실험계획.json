@@ -1,166 +1,116 @@
 {
   "2": [
     [
-      "CARD07",
-      "CARD09"
-    ],
-    [
-      "CARD01",
-      "CARD09"
-    ],
-    [
-      "CARD01",
-      "CARD03"
-    ],
-    [
-      "CARD03",
-      "CARD04"
-    ],
-    [
-      "CARD02",
-      "CARD09"
-    ],
-    [
-      "CARD02",
-      "CARD08"
-    ],
-    [
-      "CARD01",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD08"
-    ],
-    [
-      "CARD05",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD07"
-    ],
-    [
       "CARD04",
-      "CARD08"
-    ],
-    [
-      "CARD01",
-      "CARD04"
-    ],
-    [
-      "CARD08",
-      "CARD09"
-    ],
-    [
-      "CARD06",
       "CARD07"
     ],
     [
-      "CARD06",
-      "CARD09"
-    ],
-    [
-      "CARD08",
-      "CARD10"
-    ],
-    [
-      "CARD02",
-      "CARD10"
-    ],
-    [
-      "CARD03",
-      "CARD06"
+      "CARD01",
+      "CARD05"
     ],
     [
       "CARD01",
       "CARD02"
     ],
     [
-      "CARD07",
-      "CARD10"
-    ]
-  ],
-  "3": [
-    [
-      "CARD01",
       "CARD05",
-      "CARD10"
+      "CARD07"
     ],
     [
-      "CARD04",
+      "CARD02",
+      "CARD04"
+    ],
+    [
+      "CARD02",
+      "CARD03"
+    ],
+    [
+      "CARD05",
+      "CARD06"
+    ],
+    [
+      "CARD01",
+      "CARD06"
+    ],
+    [
       "CARD06",
       "CARD08"
     ],
     [
       "CARD03",
-      "CARD08",
-      "CARD10"
+      "CARD08"
     ],
     [
-      "CARD04",
-      "CARD05",
-      "CARD10"
+      "CARD01",
+      "CARD04"
     ],
     [
       "CARD03",
-      "CARD04",
-      "CARD10"
-    ],
-    [
-      "CARD02",
-      "CARD05",
-      "CARD10"
+      "CARD04"
     ],
     [
       "CARD01",
-      "CARD06",
-      "CARD09"
-    ],
-    [
-      "CARD02",
-      "CARD06",
-      "CARD10"
-    ],
-    [
-      "CARD03",
-      "CARD06",
-      "CARD07"
-    ],
-    [
-      "CARD01",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD05",
-      "CARD06",
-      "CARD10"
-    ],
-    [
-      "CARD06",
-      "CARD07",
-      "CARD09"
-    ],
-    [
-      "CARD01",
-      "CARD02",
       "CARD03"
     ],
     [
+      "CARD06",
+      "CARD07"
+    ],
+    [
+      "CARD03",
+      "CARD06"
+    ],
+    [
       "CARD04",
-      "CARD08",
-      "CARD09"
+      "CARD06"
+    ],
+    [
+      "CARD02",
+      "CARD08"
+    ],
+    [
+      "CARD05",
+      "CARD08"
+    ],
+    [
+      "CARD02",
+      "CARD05"
+    ],
+    [
+      "CARD03",
+      "CARD05"
+    ]
+  ],
+  "3": [
+    [
+      "CARD02",
+      "CARD07",
+      "CARD08"
     ],
     [
       "CARD01",
       "CARD04",
-      "CARD10"
+      "CARD06"
+    ],
+    [
+      "CARD03",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD03",
+      "CARD05",
+      "CARD07"
+    ],
+    [
+      "CARD03",
+      "CARD06",
+      "CARD08"
     ],
     [
       "CARD02",
       "CARD06",
-      "CARD07"
+      "CARD08"
     ],
     [
       "CARD02",
@@ -170,37 +120,165 @@
     [
       "CARD01",
       "CARD04",
-      "CARD09"
+      "CARD08"
+    ],
+    [
+      "CARD02",
+      "CARD04",
+      "CARD07"
+    ],
+    [
+      "CARD03",
+      "CARD04",
+      "CARD06"
     ],
     [
       "CARD01",
+      "CARD05",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD03"
+    ],
+    [
+      "CARD01",
+      "CARD03",
+      "CARD08"
+    ],
+    [
+      "CARD02",
+      "CARD04",
+      "CARD06"
+    ],
+    [
+      "CARD02",
+      "CARD03",
+      "CARD04"
+    ],
+    [
+      "CARD05",
       "CARD06",
       "CARD08"
     ],
     [
       "CARD01",
       "CARD03",
-      "CARD09"
+      "CARD07"
+    ],
+    [
+      "CARD01",
+      "CARD04",
+      "CARD07"
+    ],
+    [
+      "CARD05",
+      "CARD06",
+      "CARD07"
+    ],
+    [
+      "CARD01",
+      "CARD03",
+      "CARD04"
     ]
   ],
   "4": [
     [
       "CARD01",
       "CARD02",
-      "CARD07",
-      "CARD09"
+      "CARD05",
+      "CARD08"
     ],
     [
       "CARD02",
-      "CARD03",
+      "CARD04",
       "CARD06",
-      "CARD09"
+      "CARD07"
     ],
     [
       "CARD01",
       "CARD02",
+      "CARD06",
+      "CARD07"
+    ],
+    [
+      "CARD02",
+      "CARD04",
+      "CARD05",
+      "CARD06"
+    ],
+    [
+      "CARD02",
+      "CARD03",
       "CARD07",
-      "CARD10"
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD05",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD04",
+      "CARD05"
+    ],
+    [
+      "CARD02",
+      "CARD04",
+      "CARD05",
+      "CARD07"
+    ],
+    [
+      "CARD01",
+      "CARD04",
+      "CARD06",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD06",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD04",
+      "CARD07"
+    ],
+    [
+      "CARD01",
+      "CARD03",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD03",
+      "CARD05",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD02",
+      "CARD03",
+      "CARD04",
+      "CARD05"
+    ],
+    [
+      "CARD01",
+      "CARD03",
+      "CARD04",
+      "CARD08"
+    ],
+    [
+      "CARD02",
+      "CARD05",
+      "CARD07",
+      "CARD08"
     ],
     [
       "CARD02",
@@ -211,170 +289,134 @@
     [
       "CARD02",
       "CARD03",
-      "CARD04",
-      "CARD09"
-    ],
-    [
-      "CARD03",
-      "CARD04",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD01",
       "CARD05",
-      "CARD06",
-      "CARD10"
-    ],
-    [
-      "CARD06",
-      "CARD07",
-      "CARD08",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD04",
-      "CARD09"
-    ],
-    [
-      "CARD04",
-      "CARD06",
-      "CARD07",
-      "CARD09"
-    ],
-    [
-      "CARD02",
-      "CARD04",
-      "CARD08",
-      "CARD09"
-    ],
-    [
-      "CARD02",
-      "CARD07",
-      "CARD08",
-      "CARD10"
+      "CARD06"
     ],
     [
       "CARD01",
       "CARD03",
-      "CARD04",
+      "CARD06",
       "CARD08"
     ],
     [
       "CARD02",
       "CARD03",
-      "CARD06",
-      "CARD08"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD06",
-      "CARD09"
-    ],
-    [
-      "CARD03",
       "CARD04",
-      "CARD05",
-      "CARD07"
-    ],
-    [
-      "CARD01",
-      "CARD06",
-      "CARD07",
-      "CARD09"
-    ],
-    [
-      "CARD03",
-      "CARD05",
-      "CARD07",
-      "CARD09"
-    ],
-    [
-      "CARD03",
-      "CARD05",
-      "CARD06",
-      "CARD10"
-    ],
-    [
-      "CARD02",
-      "CARD03",
-      "CARD05",
-      "CARD08"
+      "CARD06"
     ]
   ],
   "5": [
     [
-      "CARD02",
-      "CARD03",
-      "CARD05",
-      "CARD07",
-      "CARD10"
-    ],
-    [
       "CARD01",
       "CARD02",
-      "CARD06",
-      "CARD08",
-      "CARD09"
+      "CARD04",
+      "CARD05",
+      "CARD08"
     ],
     [
       "CARD02",
       "CARD04",
-      "CARD08",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD03",
-      "CARD07",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD03",
+      "CARD05",
       "CARD06",
       "CARD07"
     ],
     [
+      "CARD01",
       "CARD02",
-      "CARD04",
+      "CARD03",
       "CARD05",
-      "CARD08",
-      "CARD10"
+      "CARD06"
     ],
     [
       "CARD01",
+      "CARD02",
       "CARD03",
       "CARD04",
-      "CARD05",
-      "CARD08"
+      "CARD07"
     ],
     [
+      "CARD02",
       "CARD03",
-      "CARD04",
       "CARD05",
       "CARD06",
       "CARD08"
     ],
     [
       "CARD01",
-      "CARD03",
+      "CARD02",
+      "CARD04",
+      "CARD06",
+      "CARD08"
+    ],
+    [
+      "CARD02",
       "CARD05",
       "CARD06",
-      "CARD10"
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD05",
+      "CARD07",
+      "CARD08"
     ],
     [
       "CARD01",
       "CARD02",
       "CARD03",
-      "CARD09",
-      "CARD10"
+      "CARD05",
+      "CARD07"
+    ],
+    [
+      "CARD03",
+      "CARD04",
+      "CARD05",
+      "CARD06",
+      "CARD07"
+    ]
+  ],
+  "6": [
+    [
+      "CARD03",
+      "CARD04",
+      "CARD05",
+      "CARD06",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD03",
+      "CARD04",
+      "CARD06",
+      "CARD07"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD04",
+      "CARD05",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD03",
+      "CARD05",
+      "CARD07",
+      "CARD08"
+    ],
+    [
+      "CARD01",
+      "CARD02",
+      "CARD05",
+      "CARD06",
+      "CARD07",
+      "CARD08"
     ]
   ],
   "8": [
@@ -383,64 +425,10 @@
       "CARD02",
       "CARD03",
       "CARD04",
-      "CARD07",
-      "CARD08",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD03",
-      "CARD04",
-      "CARD05",
-      "CARD07",
-      "CARD08",
-      "CARD09"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD04",
-      "CARD05",
-      "CARD06",
-      "CARD08",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD02",
-      "CARD03",
       "CARD05",
       "CARD06",
       "CARD07",
-      "CARD09",
-      "CARD10"
-    ],
-    [
-      "CARD01",
-      "CARD03",
-      "CARD04",
-      "CARD05",
-      "CARD06",
-      "CARD07",
-      "CARD08",
-      "CARD10"
-    ]
-  ],
-  "10": [
-    [
-      "CARD01",
-      "CARD02",
-      "CARD03",
-      "CARD04",
-      "CARD05",
-      "CARD06",
-      "CARD07",
-      "CARD08",
-      "CARD09",
-      "CARD10"
+      "CARD08"
     ]
   ]
 }

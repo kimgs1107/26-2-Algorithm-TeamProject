@@ -5,12 +5,12 @@ import random
 SEED = 42
 OUT_PATH = "카드_조합_실험계획.json"
 
-# 카드 혜택 DB 확정 전 임시 ID. DB 완성되면 실제 카드ID로 교체
-CARD_POOL = [f"CARD{i:02d}" for i in range(1, 11)]
+# 확정된 카드 8장 풀 (data/cards/card_benefits.json의 카드ID와 동일)
+CARD_POOL = [f"CARD{i:02d}" for i in range(1, 9)]
 
 # 2~4장: 현실적인 대학생 보유 수준 -> 조합별 근사율 분산까지 확인
-# 5/8/10장: 기존 계획 참고용 비교점(상한선)으로 유지
-K_SAMPLE_COUNT = {2: 20, 3: 20, 4: 20, 5: 10, 8: 5, 10: 1}
+# 5~6장: 참고용 비교점, 8장(전체): 상한선 참고용
+K_SAMPLE_COUNT = {2: 20, 3: 20, 4: 20, 5: 10, 6: 5, 8: 1}
 
 def all_combos(pool, k):
     return list(itertools.combinations(pool, k))
