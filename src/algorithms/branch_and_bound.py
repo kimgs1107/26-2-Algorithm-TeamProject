@@ -135,21 +135,16 @@ class _MonthSearch:
                         break
                 lam[k] = new_lam
 
-        # 아직 전월실적 미달이지만 이번 달 안에 채울 수 있는 카드
-        pending = [c for c in self.gated_cards
-                   if spend[self.gate_index[c]] < self.gate_values[self.gate_index[c]] and taus[c] < n]
         value = sum(lam[k] * limits[k] for k in self.limited_keys)
-        if not pending:
-            for t in range(i, n):
-                row, keys, best = eff[t], key_of[t], 0.0
-                for c in range(m):
-                    k = keys[c]
-                    v = row[c] * (1.0 - lam[k] if k >= 0 else 1.0)
-                    if v > best:
-                        best = v
-                value += best
-            return int(value + FLOAT_SLACK), tuple(lam)
-        return self._bound_with_gate_cost(i, spend, lam, eff, taus, pending, value), tuple(lam)
+        for t in range(i, n):
+            row, keys, best = eff[t], key_of[t], 0.0
+            for c in range(m):
+                k = keys[c]
+                v = row[c] * (1.0 - lam[k] if k >= 0 else 1.0)
+                if v > best:
+                    best = v
+            value += best
+        return int(value + FLOAT_SLACK), tuple(lam)
 
     def _children(self, i, total, limits, spend):
         amount = self.transactions[i]["금액"]
