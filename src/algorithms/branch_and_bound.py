@@ -3,33 +3,20 @@ from bisect import bisect_left
 
 from common import clean_transactions, build_benefit_table, evaluate_assignment, split_by_month, format_result
 
-# 분기한정법(Branch and Bound): 결제를 날짜순으로 한 건씩 카드에 배정하는 DFS 탐색 트리
-#   - 깊이 i 노드 = 앞의 i건까지 배정이 끝난 상태 (한도 잔액, 카드별 전월실적 누적)
-#   - 상한(upper bound) = 남은 결제에서 얻을 수 있는 혜택의 낙관적 추정치 (실제 최적값 이상이 보장됨)
-#   - 지금까지 혜택 + 상한 <= 현재까지 찾은 최적해(incumbent)면 그 가지는 더 볼 필요 없음 → 가지치기
-#
-# 혜택 계산은 common.evaluate_assignment를 그대로 사용한다.
-#   결제 1건 x 카드 1장마다 evaluate_assignment를 두 번 호출해서
-#   "전월실적 충족 시 혜택(한도 무시)" / "미충족 시 혜택(한도 무시)"을 미리 구해 두고,
-#   탐색 중에는 거기에 남은 한도만 min으로 씌운다.
-#   (common.py에서 같은 (카드, 업종)의 혜택들은 한도키 하나를 공유하므로
-#    max_후보 min(혜택_후보, 잔액) == min(max_후보 혜택_후보, 잔액) 이 성립)
-#   월별 최종 총혜택액은 evaluate_assignment로 다시 채점하고, 탐색값과 일치하는지 assert로 확인한다.
-MAX_NODES = 300_000  # 월별 탐색 노드 상한 (결제 건수·카드 수가 크면 트리가 지수적으로 커지므로 안전장치)
-MAX_SECONDS = 30.0   # 월별 탐색 시간 상한 (노드 하나 처리 비용이 커서 노드 상한 전에 오래 걸리는 경우 대비)
-TIME_CHECK_EVERY = 256  # 시간 확인 주기(노드 수) — 매 노드마다 시계를 보면 오히려 느려짐
-# 상한은 실수로 계산한 뒤 내림하는데, 실제 혜택은 정수(원)이므로 1원 미만 여유를 둬도 상한으로 안전.
-# 결제가 많을 때 실수 덧셈 오차가 쌓여도 상한이 실제 최적값보다 작아지지 않도록 넉넉히 0.01원으로 둠.
-FLOAT_SLACK = 0.01
-ROOT_ROUNDS = 10     # 루트에서 라그랑주 승수를 다듬는 반복 횟수 (자식 노드는 부모 승수를 이어받아 1회만 갱신)
+# 결제를 날짜순으로 한 건씩 카드에 배정하는 DFS. 지금까지 혜택 + 상한 <= 현재 최적해면 가지치기
+# 혜택은 common.evaluate_assignment로 결제x카드별 값을 미리 구해두고, 탐색 중엔 남은 한도만 반영
+MAX_NODES = 300_000  # 월별 탐색 노드 상한 (dp.py의 MAX_STATES와 같은 안전장치)
+MAX_SECONDS = 30.0   # 월별 탐색 시간 상한
+TIME_CHECK_EVERY = 256
+FLOAT_SLACK = 0.01   # 실수로 계산한 상한을 내림할 때 오차 여유 (혜택은 원 단위 정수)
+ROOT_ROUNDS = 10     # 루트에서 라그랑주 승수 갱신 횟수 (자식은 부모 값을 이어받아 1회)
 NO_LIMIT = float("inf")
 
 
 def _precompute_gains(transactions: list[dict], cards: list[str], table: dict):
-    """결제 t, 카드 c 별로 (전월실적 충족 시 혜택, 미충족 시 혜택, 한도키)를 evaluate_assignment로 계산."""
+    """결제x카드별 (전월실적 충족 시 혜택, 미충족 시 혜택, 한도키). 한도는 무시하고 계산."""
     unlimited = {key: None for key in table["limits"]}
     eligible_table = {"benefits": table["benefits"], "limits": unlimited, "gates": {}}
-    # 전월실적 기준을 절대 못 넘는 값으로 두면 전월실적 조건 없는 혜택만 남음
     ineligible_table = {
         "benefits": table["benefits"],
         "limits": unlimited,
@@ -55,7 +42,7 @@ def _precompute_gains(transactions: list[dict], cards: list[str], table: dict):
 
 
 def _dominates(a, b) -> bool:
-    """자식 노드 a가 b보다 모든 면에서 같거나 나으면(혜택·한도잔액·전월실적 누적) b는 볼 필요 없음."""
+    """a가 혜택·한도잔액·전월실적 누적 모두 b 이상이면 b는 볼 필요 없음."""
     total_a, limits_a, spend_a = a
     total_b, limits_b, spend_b = b
     return (total_a >= total_b
@@ -64,7 +51,7 @@ def _dominates(a, b) -> bool:
 
 
 class _MonthSearch:
-    """한 달치 결제에 대한 분기한정 탐색. 상한 계산에 쓰는 사전 계산 테이블을 들고 있음."""
+    """한 달치 결제에 대한 분기한정 탐색."""
 
     def __init__(self, transactions: list[dict], cards: list[str], table: dict):
         self.transactions = transactions
@@ -85,9 +72,8 @@ class _MonthSearch:
         self.gate_values = [table["gates"][cards[c]] for c in self.gated_cards]
 
         self.gain_e, self.gain_n, gain_key = _precompute_gains(transactions, cards, table)
-        # 결제 t를 카드 c로 냈을 때 차감되는 한도키 인덱스 (-1: 해당 업종 혜택 없음)
+        # 결제 t를 카드 c로 냈을 때 차감되는 한도키 (-1: 혜택 없음)
         self.key_of = [[key_index[key] if key is not None else -1 for key in row] for row in gain_key]
-        # 한도키 k가 어떤 카드 소속이고, 어떤 결제들이 그 키로 혜택을 받을 수 있는지
         self.key_card = [cards.index(key.split(":", 1)[0]) for key in limit_keys]
         self.key_txs = [[] for _ in limit_keys]
         for t in range(n):
@@ -96,7 +82,7 @@ class _MonthSearch:
                 if k >= 0 and self.gain_e[t][c] > 0:
                     self.key_txs[k].append(t)
 
-        # 결제마다 가장 좋은 카드를 한도·전월실적 무시하고 고른 혜택의 접미사 합 (가장 싸고 느슨한 상한)
+        # 결제마다 최대 혜택(한도·전월실적 무시)의 접미사 합 = 가장 단순한 상한
         self.suffix_best = [0] * (n + 1)
         for t in range(n - 1, -1, -1):
             self.suffix_best[t] = self.suffix_best[t + 1] + max(self.gain_e[t])
@@ -104,10 +90,8 @@ class _MonthSearch:
         for t in range(n):
             self.prefix_amount[t + 1] = self.prefix_amount[t] + transactions[t]["금액"]
 
-    # ------------------------------------------------------------------ 상한
     def _eligible_from(self, i, spend):
-        """카드별로 '남은 결제를 전부 몰아줬을 때 전월실적 기준을 처음 넘을 수 있는 결제 인덱스'.
-        그 전 결제는 아무리 잘 배정해도 미충족 혜택만 받을 수 있음 (n이면 이번 달 안에 못 채움)."""
+        """카드별로 전월실적을 가장 빨리 채울 수 있는 결제 인덱스 (n이면 이번 달엔 불가)."""
         taus = [i] * self.num_cards
         for g, c in enumerate(self.gated_cards):
             if spend[g] < self.gate_values[g]:
@@ -116,14 +100,11 @@ class _MonthSearch:
         return taus
 
     def _lagrangian_bound(self, i, limits, spend, lam, rounds):
-        """라그랑주 완화 상한: 월한도 제약을 승수 λ_k(0~1)로 목적함수에 넣고, '결제당 카드 1장' 제약은 유지.
-            UB(λ) = Σ_k λ_k·남은한도_k + Σ_t max(0, max_c 혜택_tc·(1-λ_k(t,c)))
-        어떤 λ를 써도 실제 최적값 이상이므로(약쌍대성) 상한으로 유효하고, λ를 잘 고를수록 상한이 조여진다.
-        λ는 한도키별 좌표하강으로 갱신: 다른 키를 고정하면 λ_k의 최적값은 분할 배낭 문제의 임계 비율과 같음."""
+        """라그랑주 완화 상한: 월한도 제약을 승수 λ로 완화
+        UB(λ) = Σ λ_k·남은한도_k + Σ_t max_c 혜택_tc·(1-λ_k)"""
         n, m = self.n, self.num_cards
         taus = self._eligible_from(i, spend)
         gain_e, gain_n, key_of = self.gain_e, self.gain_n, self.key_of
-        # eff[t][c]: 이 노드 기준으로 낙관적으로 받을 수 있는 혜택(한도 무시, 전월실적은 가능한 시점부터 충족)
         eff = [None] * n
         for t in range(i, n):
             eff[t] = [gain_e[t][c] if t >= taus[c] else gain_n[t][c] for c in range(m)]
@@ -137,7 +118,7 @@ class _MonthSearch:
                     if t < i or eff[t][c_k] <= 0:
                         continue
                     g = eff[t][c_k]
-                    other = 0.0  # 이 결제를 다른 카드로 냈을 때 (승수 반영) 가장 좋은 값
+                    other = 0.0
                     for d in range(m):
                         if d != c_k:
                             kd = key_of[t][d]
@@ -154,7 +135,7 @@ class _MonthSearch:
                         break
                 lam[k] = new_lam
 
-        # 아직 전월실적을 못 채웠지만 이번 달 안에 채울 수는 있는 카드
+        # 아직 전월실적 미달이지만 이번 달 안에 채울 수 있는 카드
         pending = [c for c in self.gated_cards
                    if spend[self.gate_index[c]] < self.gate_values[self.gate_index[c]] and taus[c] < n]
         value = sum(lam[k] * limits[k] for k in self.limited_keys)
@@ -167,36 +148,28 @@ class _MonthSearch:
                     if v > best:
                         best = v
                 value += best
-            return int(value + FLOAT_SLACK), tuple(lam)  # 실제 혜택은 정수이므로 내림해도 상한으로 유효
+            return int(value + FLOAT_SLACK), tuple(lam)
         return self._bound_with_gate_cost(i, spend, lam, eff, taus, pending, value), tuple(lam)
 
     def _bound_with_gate_cost(self, i, spend, lam, eff, taus, pending, value):
-        """전월실적 미충족 카드 c마다 둘 중 하나는 반드시 일어남:
-          (a) 이번 달 끝까지 기준 미달 → c의 실적조건 혜택을 전부 잃음 (손실 loss_c)
-          (b) 어떤 결제 T에서 기준을 넘음 → T까지의 결제 중 금액 합이 (기준-현재누적) 이상이 되도록 c로 몰아야 하고
-              (그 결제들은 원래 최선 카드 대신 c를 씀: 비용), T 이전 결제에서는 c의 실적조건 혜택을 못 받음(손실)
-        시나리오(어떤 카드들이 기준을 채우는지)마다 해당 손실·비용을 빼고, 가능한 시나리오 중 최댓값을 상한으로 씀.
-          - 비용은 분할 배낭으로 완화해서 구함 → 실제 비용 이하이므로 안전
-          - 기준 미달 카드 집합은 시나리오마다 한꺼번에 낮춘 값(value_failed)을 직접 계산
-          - 기준을 채우는 카드의 'T 이전 손실'은 개별 감소량으로 계산 — max 함수는 부분모듈이라 다른 카드를 이미
-            낮춘 상태에서의 감소량이 더 크거나 같으므로 안전. 카드별로 몰아주는 결제 집합은 서로 겹치지 않고,
-            비용은 미충족 카드 전부를 낮춘 최댓값(lowest) 기준으로 계산해서 시나리오 조합과 상관없이 보수적으로 맞음."""
+        """전월실적 미달 카드는 (a) 끝까지 미달해 실적조건 혜택을 잃거나
+        (b) 다른 카드 혜택을 포기하고 결제를 몰아 실적을 채워야 함.
+        어떤 카드가 실적을 채우는지(시나리오)별로 손실·비용을 빼고 그중 최댓값을 상한으로 씀."""
         n, m, key_of, gain_n = self.n, self.num_cards, self.key_of, self.gain_n
         txs = self.transactions
         pending_set = set(pending)
         pending_pos = {c: j for j, c in enumerate(pending)}
-        loss_at = {c: [0.0] * (n - i) for c in pending}   # 결제별: c의 실적조건 혜택을 잃을 때 감소량
-        cost_at = {c: [0.0] * (n - i) for c in pending}   # 결제별: 그 결제를 c로 몰 때 비용 (충족 혜택 기준, 작은 쪽)
-        cost_before = {c: [0.0] * (n - i) for c in pending}  # 실적 도달 전에 c로 몰 때 비용 (미충족 혜택 기준)
+        loss_at = {c: [0.0] * (n - i) for c in pending}      # 실적조건 혜택을 잃을 때 감소량
+        cost_at = {c: [0.0] * (n - i) for c in pending}      # 결제를 c로 몰 때 비용 (실적 충족 후)
+        cost_before = {c: [0.0] * (n - i) for c in pending}  # 결제를 c로 몰 때 비용 (실적 충족 전)
         num_masks = 1 << len(pending)
-        value_failed = [value] * num_masks  # mask에 속한 카드들이 기준 미달일 때 Σλ·한도 + Σ_t max 값
+        value_failed = [value] * num_masks  # mask의 카드들이 실적 미달일 때 상한
         for t in range(i, n):
             row, keys = eff[t], key_of[t]
             vals, degraded = [0.0] * m, [0.0] * m
             for c in range(m):
                 factor = 1.0 - lam[keys[c]] if keys[c] >= 0 else 1.0
                 vals[c] = row[c] * factor
-                # 미충족 카드의 '충족 혜택'을 미충족 혜택으로 낮춘 값
                 degraded[c] = gain_n[t][c] * factor if c in pending_set and t >= taus[c] else vals[c]
             best = max(0.0, max(vals))
             lowest = max(0.0, max(degraded))
@@ -216,8 +189,7 @@ class _MonthSearch:
                 cost_before[c][t - i] = max(0.0, lowest - degraded[c])
 
         def cover_cost(costs, end, need, costs_late=None, late_from=None):
-            """결제 i..end-1 중 금액 합이 need 이상이 되도록 고를 때 비용 합의 최솟값 (분할 배낭 완화).
-            costs_late가 있으면 late_from 이후 결제는 그 비용을 씀(실적을 넘는 결제가 될 수도 있는 구간)."""
+            """결제 i..end-1로 금액 need를 채우는 최소 비용 (분할 배낭 완화)."""
             if costs_late is not None:
                 costs = [costs[j] if i + j < late_from else costs_late[j] for j in range(end - i)]
             items = sorted((costs[j] / txs[i + j]["금액"], j) for j in range(end - i))
@@ -228,11 +200,10 @@ class _MonthSearch:
                     return total + costs[j] * need / amount
                 total += costs[j]
                 need -= amount
-            return float("inf")  # 이 구간 결제를 다 몰아줘도 못 채움
+            return float("inf")
 
         def timed_cost(c, need):
-            """min_T [T 이전 손실 합 + 0..T 결제로 need를 채우는 비용].
-            T를 구간으로 묶어 계산: T ∈ [a, b]면 손실 >= 손실(a), 비용 >= 비용(b) 이므로 그 합은 하한으로 안전."""
+            """실적을 넘는 시점 T에 대해 min(T 이전 손실 + T까지 결제로 채우는 비용). T는 구간 단위로 계산."""
             start = taus[c]
             if start >= n:
                 return float("inf")
@@ -244,33 +215,29 @@ class _MonthSearch:
             best = float("inf")
             for a in range(start, n, step):
                 b = min(a + step - 1, n - 1)
-                # T ∈ [a, b]: a 이전 결제는 확실히 실적 도달 전(미충족 혜택), a..b는 넘는 결제일 수도 있어 충족 기준
                 best = min(best, prefix_loss[a - i] + cover_cost(cost_before[c], b + 1, need, cost_at[c], a))
             return best
 
         needs = [self.gate_values[self.gate_index[c]] - spend[self.gate_index[c]] for c in pending]
         costs = [timed_cost(c, need) for c, need in zip(pending, needs)]
 
-        # 카드마다 몰아주는 결제는 겹칠 수 없으므로, E의 필요 금액 합이 남은 결제 금액 합보다 크면 불가능한 시나리오
         remaining_amount = self.prefix_amount[n] - self.prefix_amount[i]
         best_scenario = None
         for mask in range(1 << len(pending)):
             chosen = [j for j in range(len(pending)) if mask >> j & 1]
             need_sum = sum(needs[j] for j in chosen)
             if need_sum > remaining_amount:
-                continue
+                continue  # 남은 결제로 이 카드들을 동시에 채울 수 없음
             cost = sum(costs[j] for j in chosen)
             if len(chosen) >= 2:
-                # 두 장 이상 채우는 경우: 필요 금액 합 전체를 서로 겹치지 않는 결제로 채워야 하므로
-                # 결제마다 (채우는 카드들 중) 가장 싼 비용으로 합계 need_sum을 덮는 비용도 하한이 됨
+                # 여러 장을 채울 땐 같은 결제를 중복으로 못 씀
                 joint = [min(cost_at[pending[j]][idx] for j in chosen) for idx in range(n - i)]
                 cost = max(cost, cover_cost(joint, n, need_sum))
-            scenario = value_failed[(num_masks - 1) ^ mask] - cost  # E 밖의 카드는 전부 기준 미달로 낮춘 값에서 비용 차감
+            scenario = value_failed[(num_masks - 1) ^ mask] - cost
             if best_scenario is None or scenario > best_scenario:
                 best_scenario = scenario
-        return int(best_scenario + FLOAT_SLACK)  # E=공집합은 항상 가능하므로 None일 일은 없음
+        return int(best_scenario + FLOAT_SLACK)
 
-    # ------------------------------------------------------------------ 분기
     def _children(self, i, total, limits, spend):
         amount = self.transactions[i]["금액"]
         children = []
@@ -281,7 +248,7 @@ class _MonthSearch:
                 eligible = True
             else:
                 eligible = spend[g] + amount >= self.gate_values[g]
-                clamped = min(spend[g] + amount, self.gate_values[g])  # 기준 넘으면 더 쌓여도 결과 동일
+                clamped = min(spend[g] + amount, self.gate_values[g])  # 기준 넘으면 더 쌓을 필요 없음
                 if clamped != spend[g]:
                     new_spend = spend[:g] + (clamped,) + spend[g + 1:]
 
@@ -294,15 +261,14 @@ class _MonthSearch:
                     new_limits = limits[:k] + (limits[k] - gain,) + limits[k + 1:]
             children.append((total + gain, new_limits, new_spend, c))
 
-        # 형제 노드끼리 지배 관계 제거 (완전히 같은 상태면 앞 카드 하나만 남김)
+        # 다른 자식보다 모든 면에서 못한 자식은 제거
         kept = []
         for child in children:
             if any(_dominates(other[:3], child[:3]) for other in kept):
                 continue
             kept = [o for o in kept if not _dominates(child[:3], o[:3])]
             kept.append(child)
-        # 스택은 나중에 넣은 것부터 꺼내므로 혜택(·전월실적 누적)이 작은 것부터 push
-        # → 혜택 큰 자식을 먼저 탐색해 좋은 incumbent를 빨리 잡음
+        # 혜택 큰 자식부터 탐색하도록 작은 것부터 push
         kept.sort(key=lambda ch: (ch[0], sum(ch[2])))
         return kept
 
@@ -314,11 +280,10 @@ class _MonthSearch:
         init_lam = tuple(0.0 for _ in self.init_limits)
 
         best_total, best_path = -1, None
-        best_seen = {}  # (깊이, 한도잔액, 전월실적 누적) -> 그 상태에 도달한 최대 혜택 (같은 상태 재탐색 방지)
+        best_seen = {}  # 같은 상태 재탐색 방지
         path = [0] * n
         nodes = 0
         started = time.perf_counter()
-        # 스택 원소: (깊이, 지금까지 혜택, 한도잔액, 전월실적 누적, 직전 결제에 고른 카드, 부모의 라그랑주 승수)
         stack = [(0, 0, self.init_limits, init_spend, None, init_lam)]
         while stack:
             i, total, limits, spend, chosen, lam = stack.pop()
@@ -341,15 +306,13 @@ class _MonthSearch:
                     best_total, best_path = total, path[:]
                 continue
 
-            # 가지치기 1: 값싼 상한(결제별 최대 혜택 합)으로 먼저 걸러봄
+            # 가지치기: 단순 상한 → 같은 상태 → 라그랑주 상한 순
             if total + self.suffix_best[i] <= best_total:
                 continue
-            # 가지치기 2: 같은 상태에 이미 같거나 큰 혜택으로 도달한 적 있음
             state = (i, limits, spend)
             if best_seen.get(state, -1) >= total:
                 continue
             best_seen[state] = total
-            # 가지치기 3: 라그랑주 상한 (incumbent가 아직 없으면 계산 생략하고 첫 리프까지 바로 내려감)
             if best_total >= 0:
                 bound, lam = self._lagrangian_bound(i, limits, spend, lam, ROOT_ROUNDS if i == 0 else 1)
                 if total + bound <= best_total:
@@ -372,7 +335,7 @@ def assign(transactions: list[dict], cards: list[str], benefit_db: dict) -> dict
     table = build_benefit_table(cards, benefit_db)
     cleaned = clean_transactions(transactions)
     if len({tx["거래ID"] for tx in cleaned}) != len(cleaned):
-        raise ValueError("거래ID가 중복됨 (배정 결과를 거래ID로 구분하므로 고유해야 함)")
+        raise ValueError("거래ID가 중복됨")
 
     full_assignment = {}
     for month_txs in split_by_month(cleaned).values():
@@ -386,7 +349,7 @@ def assign(transactions: list[dict], cards: list[str], benefit_db: dict) -> dict
 
 
 def _verify_month(transactions: list[dict], cards: list[str], table: dict) -> int:
-    """소규모 검증용: 한 달치 결제를 완전탐색 결과와 비교 (결제 건수가 작을 때만 사용)."""
+    """소규모 검증용: 완전탐색 결과와 비교."""
     from itertools import product
 
     assignment, total = _search_month(transactions, cards, table)
