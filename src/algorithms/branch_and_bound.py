@@ -12,7 +12,6 @@ FLOAT_SLACK = 0.01   # 실수로 계산한 상한을 내림할 때 오차 여유
 ROOT_ROUNDS = 10     # 루트에서 라그랑주 승수 갱신 횟수 (자식은 부모 값을 이어받아 1회)
 NO_LIMIT = float("inf")
 
-
 def _precompute_gains(transactions: list[dict], cards: list[str], table: dict):
     """결제x카드별 (전월실적 충족 시 혜택, 미충족 시 혜택, 한도키). 한도는 무시하고 계산."""
     unlimited = {key: None for key in table["limits"]}
